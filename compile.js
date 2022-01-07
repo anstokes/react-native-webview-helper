@@ -1,46 +1,46 @@
 #!/usr/bin/env node
 
+// Allow console logging
+/* eslint no-console:0 */
+
 // Libraries
-var fs = require("fs");
-var glob = require("glob");
-var { inlineSource } = require("inline-source");
-var path = require("path");
+const fs = require('fs');
+const glob = require('glob');
+const { inlineSource } = require('inline-source');
+const path = require('path');
 
-// Fetch arguments, if any
-const [,, ...args] = process.argv;
+const root = process.cwd();
+console.log(`Working directory: ${root}`);
 
-var root = process.cwd();
-//var root = "D:\\ReactNative\\mSite";
-console.log('Working directory: ' + root);
+async function minifyHtml(file, directory) {
+  // Minifiy/inline the HTML, CSS and Javascript
+  inlineSource(file, {
+    attribute: false,
+    compress: true,
+  }).then((html) => {
+    // Save the minified file
+    const targetFile = path.parse(file).base.replace('.html', '.min.html');
+    const targetPath = path.resolve(directory, targetFile);
+    console.log(`Minified: ${targetFile}`);
+    fs.writeFile(targetPath, html, (err) => {
+      // Check for errors
+      if (err) {
+        console.log(err);
+      }
+    });
+  }).catch((err) => {
+    // Handle error
+    console.log(err);
+  });
+}
 
 // Find the directories
-glob.sync("webviews/!(assets)", {cwd: root}).map(directory => {
-	var directoryPath = path.resolve(path.join(root, directory));
-	// Find source HTML files
-	glob.sync("src/*.html", {cwd: directory}).map(file => {
-		var sourceFile = path.resolve(path.join(directory, file));
-		minifyHtml(sourceFile, directory);
-	});
+glob.sync('webviews/!(assets)', { cwd: root }).map((directory) => {
+  // Find source HTML files
+  glob.sync('src/*.html', { cwd: directory }).map((file) => {
+    const sourceFile = path.resolve(path.join(directory, file));
+    minifyHtml(sourceFile, directory);
+    return true;
+  });
+  return true;
 });
-	
-async function minifyHtml(file, directory) {
-	// Minifiy/inline the HTML, CSS and Javascript
-	inlineSource(file, {
-		attribute: false,
-		compress: true
-	}).then((html) => {
-		// Save the minified file
-		var targetFile = path.parse(file).base.replace('.html', '.min.html');
-		var targetPath = path.resolve(directory, targetFile);
-		console.log('Minified: ' + targetFile);
-		fs.writeFile(targetPath, html, (err) => {
-			// Check for errors
-			if (err) {
-				console.log(err);
-			}
-		});
-	}).catch((err) => {
-		// Handle error
-		console.log(err);
-	});	
-}
